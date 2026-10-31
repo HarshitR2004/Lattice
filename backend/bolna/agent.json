@@ -1,0 +1,20 @@
+{
+  "agent_config": {
+    "agent_name": "Lattice Workflow Copilot",
+    "agent_type": "other",
+    "agent_welcome_message": "Hi, I'm Lattice. I'll help you follow your inspection and record your answers. Let me check where you left off.",
+    "tasks": [{
+      "task_type": "conversation",
+      "toolchain": {"execution": "parallel", "pipelines": [["transcriber", "llm", "synthesizer"]]},
+      "task_config": {"hangup_after_silence": 120, "call_terminate": 3600, "hangup_after_LLMCall": false},
+      "tools_config": {
+        "input": {"provider": "default", "format": "wav"},
+        "output": {"provider": "default", "format": "wav"},
+        "transcriber": {"provider": "deepgram", "model": "nova-3", "language": "en", "stream": true},
+        "llm_agent": {"agent_type": "simple_llm_agent", "agent_flow_type": "streaming", "llm_config": {"provider": "openai", "model": "gpt-4.1-mini", "temperature": 0.2, "max_tokens": 250}},
+        "synthesizer": {"provider": "elevenlabs", "provider_config": {"voice": "Rachel", "voice_id": "21m00Tcm4TlvDq8ikWAM", "model": "eleven_turbo_v2_5"}, "stream": true, "buffer_size": 150, "audio_format": "wav"}
+      }
+    }]
+  },
+  "agent_prompts": {}
+}
