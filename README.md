@@ -43,41 +43,6 @@ FastAPI is the authority for workflow validation, measurement checks and inspect
 
 SQLite stores workflow drafts, published versions, session state, response revisions, session events and voice-run metadata. Foreign keys, WAL mode and bounded lock waits support the local workspace. Revision checks prevent stale edits from overwriting newer changes. Command IDs make repeated requests safe.
 
-## Stack and structure
-
-| Layer | Technology |
-| --- | --- |
-| Frontend | React, TypeScript, Vite, Tailwind CSS and Motion |
-| API | FastAPI and Pydantic |
-| Persistence | SQLite, async SQLAlchemy and Alembic |
-| Voice | Bolna API and Web Call SDK |
-| Python tooling | uv, pytest and Ruff |
-
-```text
-Lattice/
-  backend/
-    app/
-      api/             HTTP routes and authenticated Bolna callbacks
-      integrations/    Bolna API client
-      config.py        Environment settings
-      database.py      Engine and transaction lifecycle
-      models.py        ORM tables
-      schemas.py       Request validation
-      repositories.py  Database operations
-      domain.py        Validation and inspection state transitions
-      services.py      Workflow and inspection orchestration
-      cli.py           Bolna agent provisioning
-      main.py          API application entrypoints
-    bolna/             Voice agent template and instructions
-    migrations/        Versioned database changes
-    tests/             Non-voice API and domain checks
-  frontend/
-    src/api/           Typed HTTP client
-    src/workflows/     Builder and workflow state
-    src/sessions/      Inspection runner, records and voice controls
-    src/workspace/     Shared navigation and providers
-```
-
 ## Quick start
 
 Requirements: **Python 3.12**, **uv** and **Node.js 22.13+** with npm.
@@ -155,23 +120,6 @@ Agent settings are defined in `backend/bolna/agent.json`; conversational instruc
 
 The browser receives temporary call credentials instead of the account API key. The agent fetches fresh inspection context, proposes captured answers and asks for spoken confirmation. Backend callbacks enforce response rules before an answer is recorded. Closing voice releases microphone access while preserving the inspection. Raw audio is not stored by the Lattice backend.
 
-## API reference
-
-Interactive documentation: [Swagger UI](http://127.0.0.1:8000/docs). Machine-readable schema: [OpenAPI](http://127.0.0.1:8000/openapi.json).
-
-| Resource | Routes under `/api/v1` |
-| --- | --- |
-| Workflows | `GET/POST /workflows`, `GET/PUT/DELETE /workflows/{id}` |
-| Publication and portability | `POST /workflows/{id}/publish`, `POST /workflows/import`, `GET /workflows/{id}/export` |
-| Sessions | `GET/POST /sessions`, `GET /sessions/{id}` |
-| Execution | `POST /sessions/{id}/actions` |
-| Records | `GET /sessions/{id}/events`, `GET /sessions/{id}/export` |
-| Voice | `GET /voice/status`, `POST /sessions/{id}/voice/session`, `POST /sessions/{id}/voice/end` |
-| Agent callbacks | `POST /integrations/bolna/tool` |
-| Health | `GET /health/live`, `GET /health/ready` |
-
-Payloads use camelCase field names. Mutable resources include a `revision`. Session actions include a unique `requestId`; repeat an identical request with the same ID when retrying it. Stale changes return `409`, invalid input returns `422` and missing records return `404`.
-
 ## Database migrations and backups
 
 Apply migrations before starting a new installation or after pulling schema changes:
@@ -182,26 +130,3 @@ uv run alembic upgrade head
 ```
 
 Generate a migration after changing ORM models with `uv run alembic revision --autogenerate -m "describe change"`, then review it before applying it. For backups, stop both backend processes before copying the SQLite database. Preserve the backup outside the repository. Database files and their WAL/journal companions are ignored by Git.
-
-## Development checks
-
-```powershell
-cd backend
-uv run pytest
-uv run ruff check app migrations tests
-```
-
-```powershell
-cd frontend
-npm run typecheck
-npm run test:sessions
-npm run build
-```
-
-These checks cover non-voice inspection behavior. Voice provisioning and live calls are separate account-dependent operations.
-
-## Workspace model
-
-This version uses one shared workspace without login or role separation. Local startup binds services to loopback. Keep the workspace API private when making callback routes reachable from Bolna.
-
-Build output, local secrets, databases, caches, browser recordings and demo assets in `output/` are excluded from source control. Migration files, environment examples and dependency lockfiles remain part of the project.
